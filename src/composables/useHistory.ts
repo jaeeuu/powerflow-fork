@@ -1,20 +1,27 @@
-import { type ChargingHistory, commands, type Result } from '@/bindings'
+import type { ChargingHistory } from '@/bindings'
+import { commands } from '@/bindings'
 
-export function useAsyncData<T>(promiseFn: () => Promise<Result<T, string>>) {
+export function useAsyncData<T>(promiseFn: () => Promise<{ status: 'ok', data: T } | { status: 'error', error: string }>) {
   const data = ref<T | null>(null)
   const isLoading = ref(true)
   const err = ref('')
 
   const load = async () => {
-    const r = await promiseFn()
-    if (r.status === 'ok') {
-      data.value = r.data
+    try {
+      const r = await promiseFn()
+      if (r.status === 'ok') {
+        data.value = r.data
+      }
+      else {
+        err.value = r.error
+      }
     }
-    else {
-      err.value = r.error
-      console.error(r.error)
+    catch (error) {
+      err.value = String(error)
     }
-    isLoading.value = false
+    finally {
+      isLoading.value = false
+    }
   }
 
   const update = () => {

@@ -32,7 +32,6 @@ pub struct AMDeviceNotification {
     _marker: PhantomData<(*mut u8, PhantomPinned)>,
 }
 
-// github.com/yury/cidre
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(
     feature = "specta",
@@ -108,9 +107,9 @@ extern "C" {
         unknown0: i32,
         unknown1: i32,
         context: *mut c_void,
-        notification: *mut AMDeviceNotification,
-    );
-    pub fn AMDeviceNotificationUnsubscribe(notification: *mut c_void);
+        notification: *mut *mut AMDeviceNotification,
+    ) -> i32;
+    pub fn AMDeviceNotificationUnsubscribe(notification: *mut AMDeviceNotification) -> i32;
     pub fn AMDeviceNotificationSubscribeWithOptions(
         callback: AMDeviceNotificationCallback,
         minimum_interface_speed: i32,
@@ -128,6 +127,7 @@ extern "C" {
     pub fn AMDeviceGetInterfaceType(device: AMDeviceRef) -> InterfaceType;
     pub fn AMDeviceConnect(device: AMDeviceRef) -> i32;
     pub fn AMDeviceDisconnect(device: AMDeviceRef) -> i32;
+    pub fn AMDeviceRelease(device: AMDeviceRef);
     pub fn AMDeviceIsPaired(device: AMDeviceRef) -> i32;
     pub fn AMDevicePair(device: AMDeviceRef) -> i32;
     pub fn AMDeviceValidatePairing(device: AMDeviceRef) -> i32;
@@ -137,7 +137,7 @@ extern "C" {
         device: AMDeviceRef,
         service_name: CFStringRef,
         options: CFDictionaryRef,
-        service_connection: *const AMDServiceConnectionRef,
+        service_connection: *mut AMDServiceConnectionRef,
     ) -> i32;
     pub fn AMDServiceConnectionInvalidate(connection: AMDServiceConnectionRef);
     pub fn AMDServiceConnectionSendMessage(
@@ -147,7 +147,7 @@ extern "C" {
     ) -> i32;
     pub fn AMDServiceConnectionReceiveMessage(
         connection: AMDServiceConnectionRef,
-        response: *const CFDictionaryRef,
+        response: *mut CFDictionaryRef,
         format: *const CFPropertyListFormat,
         unknown0: *const c_void,
         unknown1: *const c_void,

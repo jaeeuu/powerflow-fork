@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { Battery, CloudLightningIcon, Cpu, Laptop, Monitor, Smartphone } from 'lucide-vue-next'
+import { Battery, CloudLightningIcon, Cpu, Laptop, Monitor, Smartphone } from '@lucide/vue'
 import CommonTooltip from './CommonTooltip.vue'
 
 const formatter = new Intl.NumberFormat('en-US', {
@@ -59,12 +59,12 @@ const power = usePower()
           :icon="CloudLightningIcon"
           color="text-yellow-500"
         >
-          {{ formatter.format(power.systemIn + power.efficiencyLoss / 1000) }}
+          {{ formatter.format(power.systemIn + power.efficiencyLoss) }}
         </FlowItem>
 
         <CommonTooltip
           v-if="power.isCharging"
-          :content="`${$t('flow.power_loss')}: ${power.efficiencyLoss}mw`"
+          :content="`${$t('flow.power_loss')}: ${formatter.format(power.efficiencyLoss)}W`"
           as-child
         >
           <Shimmer
@@ -102,6 +102,7 @@ const power = usePower()
         <Shimmer
           :delay="2000"
           :repeat-delay="1500"
+          :reverse="!power.isCharging"
           class="rounded-full mx-2 w-full
           [--base-color:theme(colors.blue.500)]
           [--base-gradient-color:theme(colors.blue.300)]

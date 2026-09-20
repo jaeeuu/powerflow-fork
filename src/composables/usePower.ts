@@ -1,9 +1,10 @@
-import type { InterfaceType, NormalizedResource } from '@/bindings'
 import type { Reactive } from 'vue'
-import { events } from '@/bindings'
-import { useDocumentVisibility } from '@vueuse/core'
-
+import type { InterfaceType } from '@/bindings'
+import type { DisplayPower } from '@/lib/power'
 import { computed, reactive } from 'vue'
+import { events } from '@/bindings'
+
+import { normalizePowerData } from '@/lib/power'
 import { useTab } from './useTab'
 
 const MAX_STATISTICS_LENGTH = 20
@@ -19,23 +20,24 @@ export interface StatisticData {
 }
 
 interface RawPowerData {
-  data: NormalizedResource
+  data: DisplayPower
   statistics: StatisticData[]
 }
 
 function trimStatistics(statistics: StatisticData[]) {
-  if (statistics.length > MAX_STATISTICS_LENGTH)
+  if (statistics.length >= MAX_STATISTICS_LENGTH)
     statistics.shift()
 }
 
 const localPowerData: Reactive<RawPowerData> = reactive({
-  data: {} as NormalizedResource,
+  data: {} as DisplayPower,
   statistics: [],
 })
 
 let localUpdateCount = 0
 
-events.powerTickEvent.listen(async ({ payload: { data } }) => {
+events.powerTickEvent.listen(async ({ payload }) => {
+  const data = normalizePowerData(payload.data)
   localPowerData.data = data
 
   localUpdateCount++
@@ -46,7 +48,7 @@ events.powerTickEvent.listen(async ({ payload: { data } }) => {
   trimStatistics(localPowerData.statistics)
 
   localPowerData.statistics.push({
-    'time': new Date().toLocaleTimeString(),
+    'time': new Date().toLocaleTimeString(undefined, { hour12: false }),
     'System Power': data.systemLoad,
     'System In': data.systemIn,
     'Battery Level': data.batteryLevel,
@@ -55,16 +57,18 @@ events.powerTickEvent.listen(async ({ payload: { data } }) => {
   })
 })
 
-events.devicePowerTickEvent.listen(({ payload: { data, udid } }) => {
+events.devicePowerTickEvent.listen(({ payload }) => {
+  const { udid } = payload
+  const data = normalizePowerData(payload.data)
   const deviceData = getOrCreateDeviceData(udid)
   deviceData.data = data
 
   const statistics = deviceData.statistics
-  trimStatistics(statistics)
 
-  const time = new Date(data.lastUpdate * 1000).toLocaleTimeString()
+  const time = new Date(data.lastUpdate * 1000).toLocaleTimeString(undefined, { hour12: false })
 
   if (!statistics.length || time !== statistics[statistics.length - 1]?.time) {
+    trimStatistics(statistics)
     statistics.push({
       time,
       'System Power': data.systemLoad,
@@ -93,7 +97,7 @@ const power = reactive<PowerData>({
 function getOrCreateDeviceData(udid: string): RemotePowerData {
   if (!power.remote[udid]) {
     power.remote[udid] = {
-      data: {} as NormalizedResource,
+      data: {} as DisplayPower,
       statistics: [],
       name: '',
       offline: false,
@@ -118,20 +122,31 @@ events.deviceEvent.listen(({ payload }) => {
   }
 })
 
-const vis = useDocumentVisibility()
 const tab = useTab()
 
+const emptyPower = {} as DisplayPower
+
 const currentPower = computed<RawPowerData>(() => {
-  return tab.value === 'local' ? power.local : power.remote[tab.value] || {}
+  if (tab.value === 'local')
+    return power.local
+  return power.remote[tab.value] ?? {
+    data: emptyPower,
+    statistics: [],
+  }
 })
 
 export function usePower() {
-  return computed(() => ({
-    ...currentPower.value.data,
-    isLoading: Object.keys(currentPower.value.data).length === 0 || vis.value === 'hidden',
-    isRemote: tab.value !== 'local',
-    statistics: currentPower.value.statistics,
-  }))
+  return computed(() => {
+    const data = currentPower.value.data ?? emptyPower
+    const hasData = data != null && Object.keys(data).length > 0
+    return {
+      ...data,
+      // Keep last known values when the window is hidden — don't flash skeletons.
+      isLoading: !hasData,
+      isRemote: tab.value !== 'local',
+      statistics: currentPower.value.statistics ?? [],
+    }
+  })
 }
 
 export function usePowerData() {
@@ -140,8 +155,8 @@ export function usePowerData() {
 
 export function usePowerRaw() {
   return computed<
-    RawPowerData & { isLocal: true } |
-    RemotePowerData & { isLocal: false }
+    RawPowerData & { isLocal: true }
+    | RemotePowerData & { isLocal: false }
   >(() => {
     const isLocal = tab.value === 'local'
     return {

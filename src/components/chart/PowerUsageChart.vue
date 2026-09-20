@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import type { StatisticData } from '@/composables/usePower'
 import { useI18n } from 'vue-i18n'
 import CustomChartTooltip from './CustomChartTooltip.vue'
 
 const { t } = useI18n()
 const power = usePower()
+const powerStore = usePowerData()
+const tab = useTab()
+const statistics = computed(() => tab.value === 'local' ? powerStore.local.statistics : powerStore.remote[tab.value]?.statistics ?? [])
 
 const categories = computed(() => {
   const base = ['System Power'] as (keyof StatisticData)[]
@@ -24,7 +28,7 @@ const localeMap = computed(() => ({
 }))
 
 const localedData = computed(() => {
-  return power.value.statistics.map((item) => {
+  return statistics.value.map((item) => {
     return Object.fromEntries(Object.entries(item).map(([key, value]) => [localeMap.value[key] || key, value]))
   })
 })

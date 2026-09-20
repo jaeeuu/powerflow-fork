@@ -1,0 +1,84 @@
+name: Validate
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    if: github.repository == 'jaeeuu/powerflow-fork'
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      CODE_SIGNING_ALLOWED: NO
+      MACOSX_DEPLOYMENT_TARGET: '27.0'
+      SQLX_OFFLINE: 'true'
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Set up Rust
+        run: |
+          rustup update stable --no-self-update
+          rustup default stable
+          rustup target add aarch64-apple-darwin
+          rustup component add rustfmt
+          rustc --version
+          xcodebuild -version
+          xcrun --show-sdk-version
+          sw_vers
+          test "$(uname -m)" = arm64
+          test "$(sw_vers -productVersion | cut -d. -f1)" -ge 27
+          xcodebuild -version | grep -E '^Xcode 27'
+      - uses: actions/cache@v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            target
+          key: rust-xcode27-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}
+          restore-keys: rust-xcode27-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm lint
+      - run: pnpm build
+      - run: cargo fmt --all -- --check
+      - name: Test and generate bindings
+        run: |
+          cargo test --workspace --locked
+          pnpm typecheck
+      - name: Compile and link for macOS 27 ARM
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '27.0'
+        run: |
+          pnpm tauri build --target aarch64-apple-darwin --no-bundle -- --locked
+          file target/aarch64-apple-darwin/release/powerflow
+          test "$(lipo -archs target/aarch64-apple-darwin/release/powerflow)" = arm64
+          otool -l target/aarch64-apple-darwin/release/powerflow | grep -A 5 LC_BUILD_VERSION
+          otool -l target/aarch64-apple-darwin/release/powerflow | grep -Eq 'minos 27\.0'
+      - name: Generated bindings
+        if: always()
+        run: cat src/bindings.ts
+      - uses: actions/upload-artifact@v7.0.1
+        if: always()
+        with:
+          name: macos-arm64-validation
+          path: |
+            src/bindings.ts
+            target/aarch64-apple-darwin/release/powerflow
+          if-no-files-found: warn

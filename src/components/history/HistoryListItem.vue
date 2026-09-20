@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { ChargingHistory } from '@/bindings'
+import { ChevronRight, LaptopIcon } from '@lucide/vue'
+import { MobileIcon } from '@radix-icons/vue'
+import { useI18n } from 'vue-i18n'
 import { formatChargingDuration } from '@/lib/format'
 import { useTimeAgoOptions } from '@/lib/i18n'
-import { MobileIcon } from '@radix-icons/vue'
-import { ChevronRight, LaptopIcon } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
 
 const { timestamp, chargingTime } = defineProps<ChargingHistory>()
 const { t } = useI18n()

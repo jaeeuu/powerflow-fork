@@ -10,8 +10,46 @@ cycle_count: 循环次数
 cycle_count_desc: 总循环次数
 energy: 能量
 designed_capacity: 设计容量
+max_capacity: 最大容量
 times: 次
+app_name: Powerflow
+navigation:
+  history: 充电历史
+  settings: 设置
+  local: 本机
+  offline: 离线
+popover:
+  open_app: 打开 Powerflow
+history:
+  title: 充电历史
+  empty: 暂无充电记录
+  empty_desc: 为设备充电后，这里会记录首次充电会话。
+  select: 选择一条充电记录以查看详情。
+  unknown_device: 未知设备
+  with_adapter: 使用 {adapter}
+  duration: 时长
+  average_power: 平均功率
+  peak: 峰值
+  charging_rate: 充电速率
+  average_temperature: 平均温度
+  charging_curve: 充电曲线
+  additional_detail: 更多详情
+  temperature_peak: 最高温度
+  adapter_power_peak: 适配器峰值功率
+  adapter_watts: 适配器额定功率
+  curve_system_in: 系统输入
+  curve_battery_power: 电池功率
+  curve_system_load: 系统功耗
+  curve_battery_level: 电量
+  export: 导出数据
+  delete: 删除
+  export_success: 充电数据已导出
+  delete_success: 充电记录已删除
 status:
+  external_power: 外接电源
+  calculating: 正在计算…
+  estimated: 估算
+  estimated_desc: 遥测不可用。电池功率根据电压和电流估算；适配器和系统功率参考充电器额定值，可能与实际值不同。
   charging_power: 充电功率
   offline: 离线
   on_battery: 电池供电
@@ -63,6 +101,7 @@ settings:
   license: 许可证
   author: 作者
   version: 版本
+  view_github: 在 GitHub 查看
 
 time:
   minute: 分钟
@@ -80,21 +119,41 @@ time_ago_options:
   month_past: 现在|上个月|{n} 个月前
   second_future: 刚刚|{n} 秒后|{n} 秒后
   second_past: 刚刚|{n} 秒前|{n} 秒前
-  short_day_future: '{n} 天前'
+  short_day_future: '{n} 天后'
   short_day_past: '{n} 天前'
-  short_hour_future: '{n} 小时前'
+  short_hour_future: '{n} 小时后'
   short_hour_past: '{n} 小时前'
-  short_minute_future: '{n} 分钟前'
+  short_minute_future: '{n} 分钟后'
   short_minute_past: '{n} 分钟前'
-  short_month_future: '{n} 个月前'
+  short_month_future: '{n} 个月后'
   short_month_past: '{n} 个月前'
-  short_second_future: '{n} 秒前'
+  short_second_future: '{n} 秒后'
   short_second_past: '{n} 秒前'
-  short_week_future: '{n} 周前'
+  short_week_future: '{n} 周后'
   short_week_past: '{n} 周前'
-  short_year_future: '{n} 年前'
+  short_year_future: '{n} 年后'
   short_year_past: '{n} 年前'
   week_future: 现在|下周|{n} 周后
   week_past: 现在|上周|{n} 周前
   year_future: 现在|明年|{n} 年后
   year_past: 现在|去年|{n} 年前
+adapter:
+  drawing: 当前功率
+  rated: 额定功率
+  tier: PD 档位
+  type: 类型
+  wireless: 无线
+  loss: 转换损耗
+health:
+  title: 电池健康趋势
+  series: 健康度
+  over_days: '{days} 个记录日'
+  collecting: 正在收集数据
+  collecting_desc: 每天记录一次，至少两天后显示趋势
+processes:
+  title: 应用能耗
+  refresh: 刷新
+  measure: 测量能耗
+  measure_desc: 测量需要几秒钟
+  empty: 暂无能耗数据
+  unit_note: top 的相对功率评分，不是瓦数

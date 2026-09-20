@@ -12,7 +12,13 @@ const formatedUpdatetime = useTimeAgo(updateTime, timeAgoOptions)
 
 <template>
   <div v-if="!power.isLoading">
-    {{ power.isCharging ? power.adapterName : $t('status.on_battery') }}
+    <!-- Show the adapter whenever it is plugged in, not only while actively
+         charging: at 100% on the adapter nothing is charging, but reporting
+         "on battery" there would be wrong. -->
+    {{ power.externalConnected ? (power.adapterName || $t('status.external_power')) : $t('status.on_battery') }}
+    <CommonTooltip v-if="power.powerEstimated" :content="$t('status.estimated_desc')">
+      <span class="ml-1 text-muted-foreground">· {{ $t('status.estimated') }}</span>
+    </CommonTooltip>
     <template v-if="!rawData.isLocal && rawData.offline">
       <span>·</span>
       {{ $t('status.offline') }}

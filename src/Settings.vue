@@ -1,5 +1,9 @@
 <script setup lang="tsx">
 import type { Component, SetupContext } from 'vue'
+import { Activity, BadgeInfo, BatteryCharging, CircleDashed, ExternalLink, Eye, Gauge, Languages, Moon, Palette, RotateCw, Sun, SunMoon, Wallet } from '@lucide/vue'
+import { openUrl as open } from '@tauri-apps/plugin-opener'
+import { storeToRefs } from 'pinia'
+import { h, ref, watch } from 'vue'
 import { Label } from '@/components/ui/label'
 import {
   NumberField,
@@ -18,14 +22,10 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { open } from '@tauri-apps/plugin-shell'
-import { Activity, BadgeInfo, BatteryCharging, CircleDashed, ExternalLink, Eye, Gauge, Languages, Moon, Palette, RotateCw, Sun, SunMoon, Wallet } from 'lucide-vue-next'
-import { storeToRefs } from 'pinia'
-import { h, ref, watch } from 'vue'
 import { version } from '../package.json'
 import { events } from './bindings'
 import { Skeleton } from './components/ui/skeleton'
-import { usePreference } from './stores/preference'
+import { initializePreference, usePreference } from './stores/preference'
 
 const commitHash = __COMMIT_HASH__
 
@@ -34,7 +34,7 @@ useSetup()
 const loading = ref(true)
 const preference = usePreference()
 
-preference.$tauri.start().then(async () => {
+initializePreference(preference).then(async () => {
   const refs = storeToRefs(preference)
 
   for (const key in refs) {
@@ -46,9 +46,7 @@ preference.$tauri.start().then(async () => {
       } as any)
     })
   }
-
-  loading.value = false
-})
+}).catch(error => console.error('[preference]', error)).finally(() => { loading.value = false })
 
 interface SettingsItemProps {
   name: string
@@ -103,7 +101,7 @@ function SettingsSection(props: SettingsSectionProps) {
       >
         <Select v-model="preference.theme">
           <SelectTrigger class="w-[130px]">
-            <SelectValue placeholder="Select a theme" />
+            <SelectValue :placeholder="$t('settings.theme')" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -137,7 +135,7 @@ function SettingsSection(props: SettingsSectionProps) {
       >
         <Select v-model="preference.language" default-value="en">
           <SelectTrigger class="w-[120px]">
-            <SelectValue placeholder="Select a language" />
+            <SelectValue :placeholder="$t('settings.language')" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -161,7 +159,7 @@ function SettingsSection(props: SettingsSectionProps) {
         <Switch
           v-else
           id="animations"
-          v-model:checked="preference.animationsEnabled"
+          v-model="preference.animationsEnabled"
           class="data-[state=checked]:bg-blue-500"
         />
       </SettingsItem>
@@ -188,8 +186,9 @@ function SettingsSection(props: SettingsSectionProps) {
             unit: 'millisecond',
             unitDisplay: 'short',
           }"
-          locale="en-US"
+          :locale="$i18n.locale"
           :min="500"
+          :max="60000"
           :step="500"
           class="w-32"
         >
@@ -210,7 +209,7 @@ function SettingsSection(props: SettingsSectionProps) {
           id="background-monitoring"
           class="data-[state=checked]:bg-blue-500"
           disabled
-          checked
+          :model-value="true"
         />
       </SettingsItem>
 
@@ -244,7 +243,7 @@ function SettingsSection(props: SettingsSectionProps) {
         :description="$t('settings.show_charging_power_desc')"
         :icon="BatteryCharging"
       >
-        <Switch v-model:checked="preference.statusBarShowCharging" class="data-[state=checked]:bg-blue-500" />
+        <Switch v-model="preference.statusBarShowCharging" class="data-[state=checked]:bg-blue-500" />
       </SettingsItem>
     </div>
 
@@ -295,9 +294,9 @@ function SettingsSection(props: SettingsSectionProps) {
           {{ commitHash.slice(0, 7) }}
           <a
             class="ml-2 mr-1 text-xs text-muted-foreground underline flex items-center gap-1 cursor-pointer"
-            @click="open(`https://github.com/lzt1008/powerflow/commit/${commitHash}`)"
+            @click="open(`https://github.com/jaeeuu/powerflow-fork/commit/${commitHash}`)"
           >
-            View on GitHub
+            {{ $t('settings.view_github') }}
             <ExternalLink class="size-3 text-muted-foreground" />
           </a>
         </div>
@@ -308,14 +307,6 @@ function SettingsSection(props: SettingsSectionProps) {
         </div>
         <div class="text-sm">
           MIT License
-        </div>
-      </div>
-      <div>
-        <div class="text-sm font-medium text-muted-foreground">
-          {{ $t('settings.author') }}
-        </div>
-        <div class="text-sm">
-          Samuel Lyon
         </div>
       </div>
     </div>

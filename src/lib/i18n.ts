@@ -11,7 +11,6 @@ export function useTimeAgoOptions(short = false): UseTimeAgoOptions<false> {
   return {
     rounding: 'floor',
     showSecond: true,
-    updateInterval: 1000,
     // a month
     max: 1000 * 3600 * 24 * 30,
     messages: {

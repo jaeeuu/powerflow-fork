@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { cn } from '@/lib/utils'
+import type { SelectItemProps } from 'reka-ui'
+import type { HTMLAttributes } from 'vue'
 import { CheckIcon } from '@radix-icons/vue'
 import {
   SelectItem,
   SelectItemIndicator,
-  type SelectItemProps,
+
   SelectItemText,
   useForwardProps,
-} from 'radix-vue'
-import { computed, type HTMLAttributes } from 'vue'
+} from 'reka-ui'
+import { computed } from 'vue'
+import { cn } from '@/lib/utils'
 
 const props = defineProps<SelectItemProps & { class?: HTMLAttributes['class'] }>()
 

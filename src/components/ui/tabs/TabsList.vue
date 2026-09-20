@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { TabsListProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
+import { TabsList } from 'reka-ui'
 import { cn } from '@/lib/utils'
-import { TabsList, type TabsListProps } from 'radix-vue'
 
 const props = defineProps<TabsListProps & { class?: HTMLAttributes['class'] }>()
 const delegatedProps = computed(() => {
@@ -22,8 +23,8 @@ const style = ref({
 
 function updateIndicator() {
   const activeTab
-  = Array.from(t.value?.$el.children as NodeListOf<HTMLDivElement> || [])
-    .find(el => el.dataset.state === 'active') || t.value?.$el.children[0]
+    = Array.from(t.value?.$el.children as NodeListOf<HTMLDivElement> || [])
+      .find(el => el.dataset.state === 'active') || t.value?.$el.children[0]
 
   if (activeTab) {
     if (style.value.left && transitionClass.value.length === 0) {
@@ -40,6 +41,10 @@ function updateIndicator() {
 }
 
 onMounted(() => {
+  const el = t.value?.$el as HTMLDivElement | undefined
+  if (!el)
+    return
+
   const observer = new MutationObserver(async (mutations) => {
     for (const m of mutations) {
       if (m.type === 'attributes' && m.attributeName === 'data-state') {
@@ -50,13 +55,13 @@ onMounted(() => {
 
   updateIndicator()
 
-  observer.observe(t.value?.$el as HTMLDivElement, {
+  observer.observe(el, {
     childList: true,
     subtree: true,
     attributes: true,
   })
 
-  return () => observer.disconnect()
+  onUnmounted(() => observer.disconnect())
 })
 </script>
 

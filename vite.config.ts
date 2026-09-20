@@ -3,11 +3,10 @@ import process from 'node:process'
 import { fileURLToPath, URL } from 'node:url'
 
 import vueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import tailwind from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import autoprefixer from 'autoprefixer'
 import { format } from 'date-fns'
-import tailwind from 'tailwindcss'
 import autoImport from 'unplugin-auto-import/vite'
 import components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
@@ -20,6 +19,7 @@ const commitHash = execSync('git rev-parse HEAD').toString().trim()
 export default defineConfig(async mode => ({
   plugins: [
     vue(),
+    tailwind(),
     vueJsx(),
     vueI18nPlugin({
       include: [
@@ -29,7 +29,7 @@ export default defineConfig(async mode => ({
     autoImport({
       imports: ['vue', 'pinia', '@vueuse/core', 'vue-router'],
       dirsScanOptions: {
-        types: true,
+        types: false,
       },
       defaultExportByFilename: true,
       dirs: [
@@ -44,11 +44,6 @@ export default defineConfig(async mode => ({
       dts: '.auto-imports/components.d.ts',
     }),
   ],
-  css: {
-    postcss: {
-      plugins: [tailwind(), autoprefixer()],
-    },
-  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

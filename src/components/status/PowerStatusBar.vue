@@ -5,14 +5,15 @@ import { useI18n } from 'vue-i18n'
 const power = usePower()
 const { t } = useI18n()
 
-const colors = [
-  'bg-blue-500',
-  'bg-blue-600',
-  'bg-blue-700',
-  'bg-blue-800',
-  'bg-blue-900',
-  'bg-blue-950',
-]
+const colorMap: Record<string, string> = {
+  screen: 'bg-blue-500',
+  heatpipe: 'bg-indigo-500',
+  systemOther: 'bg-cyan-500',
+  systemTotal: 'bg-cyan-500',
+  batteryIn: 'bg-emerald-500',
+  powerLoss: 'bg-amber-500',
+}
+const displayOrder = ['screen', 'heatpipe', 'systemOther', 'systemTotal', 'batteryIn', 'powerLoss']
 
 const localeMap = computed(() => ({
   screen: t('status.screen_power'),
@@ -47,13 +48,14 @@ const handle = watchEffect(() => {
   if (!power.value.isRemote) {
     parts.screen = power.value.brightnessPower
     parts.heatpipe = power.value.heatpipePower
-    parts.systemOther = parts.systemTotal - parts.screen - parts.heatpipe
+    parts.systemOther = Math.max(0, parts.systemTotal - parts.screen - parts.heatpipe)
     delete parts.systemTotal
   }
 
   let current = 0
   const sorted = Object.entries(parts)
-    .sort((a, b) => b[1] - a[1])
+    .filter(([, value]) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => displayOrder.indexOf(a[0]) - displayOrder.indexOf(b[0]))
     .map(([key, value]) => {
       const ret = [key, current] as const
       current += value
@@ -63,17 +65,18 @@ const handle = watchEffect(() => {
   const sum = power.value.isCharging
     ? power.value.systemIn + power.value.efficiencyLoss
     : power.value.systemLoad
+  const safeSum = Math.max(current, Number.isFinite(sum) && sum > 0 ? sum : 1)
   data.value = {
-    parts: Object.entries(parts)
-      .map(([key, value]) =>
+    parts: sorted
+      .map(([key, left]) =>
         [key, {
-          value,
-          left: sorted[sorted.findIndex(([k]) => k === key)][1] / sum,
-          color: colors[sorted.findIndex(([k]) => k === key)],
+          value: parts[key],
+          left: left / safeSum,
+          color: colorMap[key],
           locale: localeMap.value[key as keyof UnwrapRef<typeof localeMap>],
         }],
       ),
-    sum,
+    sum: safeSum,
   }
 })
 

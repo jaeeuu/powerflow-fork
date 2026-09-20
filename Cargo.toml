@@ -12,3 +12,6 @@ tpower = { path = "crates/tpower" }
 pedantic = "warn"
 nursery = "warn"
 cargo = "warn"
+
+[profile.release.build-override]
+strip = "none"
